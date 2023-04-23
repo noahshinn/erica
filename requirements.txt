@@ -7,3 +7,4 @@ SpeechRecognition
 torch
 git+https://github.com/openai/whisper.git
 gtts
+elevenlabs
