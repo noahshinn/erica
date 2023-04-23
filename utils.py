@@ -11,18 +11,6 @@ import subprocess
 
 from typing import Tuple, List, Union
 
-def does_contain_url(string: str) -> Tuple[bool, str]:
-    """
-    Check if a string contains a URL.
-
-    Returns a tuple of a boolean and the URL if found.
-    """
-    regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-    url = re.findall(regex, string)
-    if not url:
-        return False, ""
-    else:
-        return True, url[0][0]
 
 # uses Popen to run a command with a timeout
 def run_with_timeout(cmd: List[str], timeout_sec: int) -> subprocess.Popen:
@@ -61,7 +49,7 @@ SYSTEM_MESSAGE = "You are an Agent named Erica. You are smart, intelligent, help
 MAX_TOKENS = 1024
 TEMPERATURE = 0.7
 
-# @retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(6))
 def erica_chat(
     model: str,
     message: str,
@@ -92,5 +80,55 @@ def erica_chat(
 
     return [choice.message.content for choice in response.choices]  # type: ignore
 
+@retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(6))
+def gpt_chat(
+    model: str,
+    system_message: str,
+    user_message: str,
+    max_tokens: int = 1024,
+    temperature: float = 0.0,
+    num_comps=1,
+) -> Union[List[str], str]:
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message}
+        ],
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=1,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        n=num_comps,
+    )
+    if num_comps == 1:
+        return response.choices[0].message.content  # type: ignore
+
+    return [choice.message.content for choice in response.choices]  # type: ignore
+
+def compress_for_memory(model: str, text: str) -> str:
+    response = gpt_chat(
+        model=model,
+        system_message="You are an AI operating system that is working with the user to accomplish tasks.",
+        user_message=f"You will be given the history of a previous chat. Summarize the experience in a few sentences.\n\nHistory:\n{text}\n-----\nSummary:",
+        max_tokens=256,
+        temperature=0.7,
+    )
+    return str(response).strip()
+
+def reflect_on_memory(model: str, memory: List[dict]) -> str:
+    history_str = ""
+    for item in memory:
+        history_str += f"timestamp: {item['time']}\nTask summary:\n{item['task_summary']}"
+    response = gpt_chat(
+        model=model,
+        system_message="You are an AI operating system that is working with the user to accomplish tasks.",
+        user_message=f"You will be given the history of tasks that you have completed with the user and time at which they were completed. Reflect on your past shared experiences in a temporal fashion.\n\nHistory:\n{history_str}\n\n-----\nSelf-reflection:",
+        max_tokens=512,
+        temperature=0.7,
+    )
+    return str(response).strip()
+
 if __name__ == "__main__":
-    print(erica_chat(model=MODEL, message="Can you write a script to train a GAN with PyTorch", context="No context"))
+    print(erica_chat(model=MODEL, message="Hello", context="No context"))

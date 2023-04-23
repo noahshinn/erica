@@ -31,7 +31,6 @@ def download_file(url: str) -> bool:
         return False
 
 def get_text_from_url(url) -> Optional[str]:
-    response = requests.get(url)
     # if it's a pdf, grab the file and extract the text
     if url.endswith('.pdf'):
         status = download_file(url)
@@ -45,13 +44,11 @@ def get_text_from_url(url) -> Optional[str]:
         return text
     else:
         # if not, scrape the text from the html page
+        if not url.startswith("https://"):
+            url = f"https://{url}"
+        response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text()
         text = ' '.join(text.split())
 
     return text
-
-if __name__ == '__main__':
-    url = 'https://arxiv.org/pdf/1805.00899.pdf'
-    text = get_text_from_url(url)
-    print(text)

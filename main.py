@@ -1,23 +1,62 @@
-#! python3.7
-
-import argparse
 import io
-import os
-import speech_recognition as sr
-import whisper
 import torch
+import whisper
+import argparse
+from time import sleep
+from queue import Queue
+from sys import platform
+import speech_recognition as sr
 
 from datetime import datetime, timedelta
-from queue import Queue
 from tempfile import NamedTemporaryFile
-from time import sleep
-from sys import platform
+
+from speak import erica_speak
+from scrape import get_text_from_url
+from sight import get_context, does_contain_url
+from utils import erica_chat, compress_for_memory, reflect_on_memory
+
+from typing import List
 
 #Most of this code is from https://github.com/davabase/whisper_real_time 
 
+TEXT_MODEL = "gpt-3.5-turbo"
+AUDIO_MODEL = "small"
+
+def handle_message(message: str, memory: List[dict]):
+    context = get_context()
+    is_url_present, url = does_contain_url(context)
+    web_content = None
+    should_speak = "use your voice" in message or "speak" in message
+    should_reflect = "reflect" in message
+    if should_reflect:
+        response = reflect_on_memory(TEXT_MODEL, memory)
+    else:
+        if is_url_present:
+            print(url)
+            url_present_message = "I see a url present. I'm going to grab the content from there"
+            if should_speak:
+                erica_speak(url_present_message)
+            else:
+                print(url_present_message)
+            if url.endswith(".pdf"):
+                pdf_present_message = f"I can see that `{url}` is a pdf. I'm going to try to scrape the text from it. Give me a sec"
+                if should_speak:
+                    erica_speak(pdf_present_message)
+                else:
+                    print(pdf_present_message)
+            web_content = get_text_from_url(url)
+
+        if is_url_present and web_content:
+            context = f"Web content:\n\n{web_content}\n-----"
+        response = str(erica_chat(TEXT_MODEL, message, context))
+    if should_speak:
+        erica_speak(response)
+    else:
+        print(f"Erica: {response}")
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="medium", help="Model to use",
+    parser.add_argument("--model", default=AUDIO_MODEL, help="Model to use",
                         choices=["tiny", "base", "small", "medium", "large"])
     parser.add_argument("--non_english", action='store_true',
                         help="Don't use the english model.")
@@ -25,7 +64,7 @@ def main():
                         help="Energy level for mic to detect.", type=int)
     parser.add_argument("--record_timeout", default=5,
                         help="How real time the recording is in seconds.", type=float)
-    parser.add_argument("--phrase_timeout", default=3,
+    parser.add_argument("--phrase_timeout", default=1,
                         help="How much empty space between recordings before we "
                              "consider it a new line in the transcription.", type=float)  
     if 'linux' in platform:
@@ -33,7 +72,7 @@ def main():
                             help="Default microphone name for SpeechRecognition. "
                                  "Run this with 'list' to view available Microphones.", type=str)
     args = parser.parse_args()
-    keywords=["Erica", "Erika","erika","erica"]
+    keywords=["erica", "erika", "eric", "rica"]
     # The last time a recording was retreived from the queue.
     phrase_time = None
     # Current raw audio bytes.
@@ -94,6 +133,8 @@ def main():
     # Cue the user that we're ready to go.
     print("Model loaded.\n")
 
+    memory = []
+
     while True:
         try:
             now = datetime.utcnow()
@@ -126,8 +167,13 @@ def main():
                 result = audio_model.transcribe(temp_file, fp16=torch.cuda.is_available())
                 text = result['text'].strip()
                 for keyword in keywords:
-                    if(keyword in text):
-                        print(text)
+                    if keyword in text.lower():
+                        handle_message(text, memory)
+                        task_summary = compress_for_memory(TEXT_MODEL, text)
+                        memory += [{
+                            "time": datetime.now(),
+                            "task_summary": task_summary
+                        }]
                         #### ERICA NON-VOICE PROCESS
                         if("use your voice" in text):
                             print("Voice Request Detected: ", text) #### ERICA VOICE PROCESS HERE
