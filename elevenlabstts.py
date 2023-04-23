@@ -1,5 +1,10 @@
 from elevenlabs import generate, play
+from elevenlabs import set_api_key
+import os
+
+
 voice = "Bella"
+set_api_key(os.environ["ELEVENLABS_API_KEY"])
 
 def narrate(text):
     audio = generate(
@@ -7,4 +12,4 @@ def narrate(text):
     )
     play(audio)
 
-#example usage: narrate("Hello I am erica. I am a virtual assistant.") If longer than like a sentence, you have to use 
+narrate("Hello I am Erica. I am a virtual assistant.")
