@@ -1,6 +1,6 @@
 # Erica: An OS-level program for in-context inference written in Rust and Python
 
-Written in 6 hours by [Peter Bowman-Davis](https://phbd.xyz/) and [Noah Shinn](https://noahshinn.com) for 2nd place at the NYC LLM Hackathon backed by OpenAI, Anthropic, and several others.
+Written in 6 hours by [Peter Bowman-Davis](https://phbd.xyz/) and [Noah Shinn](https://noahshinn.com) for 2nd place at the [NYC LLM Hackathon](https://tech.cornell.edu/events/nyc-gpt-llm-hackathon/) backed by OpenAI, Anthropic, and several others.
 
 ![Erica features](./media/erica_features.png)
 
