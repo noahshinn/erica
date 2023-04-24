@@ -1,0 +1,3 @@
+[submodule "erica-watch"]
+	path = erica-watch
+	url = https://github.com/noahshinn024/erica-watch
