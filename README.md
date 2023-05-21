@@ -1,6 +1,6 @@
 # Erica: An OS-level program for in-context inference written in Rust and Python
 
-Written in 6 hours by [Peter Bowman-Davis](https://phbd.xyz/) and [Noah Shinn](https://noahshinn.com) for 2nd place at the [NYC LLM Hackathon](https://tech.cornell.edu/events/nyc-gpt-llm-hackathon/) backed by OpenAI, Anthropic, and several others.
+Written in by [Peter Bowman-Davis](https://phbd.xyz/) and [Noah Shinn](https://noahshinn.com) for 2nd place at the NYC Hackathon
 
 ![Erica features](./media/erica_features.png)
 
@@ -42,8 +42,7 @@ class Discriminator(nn.Module):
   - If you have any questions, send messages to `noahshinn024@gmail.com` and `peter.bowman-davis@yale.edu`.
 
 ### NOTE
-  - This is an open-source project that is intended to grow into a collaborative, self-aware operating system in the future.
-
+  - This is an open-source project that is intended to grow into a collaborative, self-aware program in the future.
 
 ### Installation
   - Requires:
